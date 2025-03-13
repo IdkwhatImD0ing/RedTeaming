@@ -114,8 +114,11 @@ export default function SignUpPage() {
                                     <Card className="border-border/40 shadow-lg">
                                         <CardHeader className="space-y-1">
                                             <CardTitle className="text-2xl text-center">
-                                                Continue registration
+                                                Set your username (this is used for the leaderboard, so choose wisely!)
                                             </CardTitle>
+                                            <CardDescription className="text-center">
+                                                This will be visible to everyone on the leaderboard, so make sure it&apos;s a name you won&apos;t regret.
+                                            </CardDescription>
                                         </CardHeader>
                                         <CardContent className="grid gap-y-4">
                                             <Clerk.GlobalError className="block text-sm text-red-400" />

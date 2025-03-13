@@ -1,9 +1,9 @@
 import { type Metadata } from 'next'
-import {
-  ClerkProvider,
-} from '@clerk/nextjs'
+import { ClerkProvider } from '@clerk/nextjs'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import Header from "@/components/Header"
+import Footer from "@/components/Footer"
 
 const inter = Inter({
   variable: '--font-inter',
@@ -24,8 +24,10 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${inter.variable} font-sans antialiased flex min-h-screen flex-col items-center justify-center`}>
+        <body className={`${inter.variable} font-sans antialiased min-h-screen flex flex-col`}>
+          <Header />
           {children}
+          <Footer />
         </body>
       </html>
     </ClerkProvider>

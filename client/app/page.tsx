@@ -1,35 +1,13 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MicIcon, ShieldAlert, Lock, Zap } from "lucide-react"
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
 
 export default function LandingPage() {
   return (
-    <div className="flex flex-col min-h-screen">
-      <header className="border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between py-4">
-          <div className="flex items-center gap-2">
-            <MicIcon className="h-6 w-6 text-primary" />
-            <span className="text-xl font-bold">Voxploit</span>
-          </div>
-          <nav className="flex items-center gap-4">
-            <SignedOut>
-              <Link href="/sign-in">
-                <Button variant="ghost">Sign In</Button>
-              </Link>
-              <Link href="/sign-up">
-                <Button variant="default">Get Started</Button>
-              </Link>
-            </SignedOut>
-            <SignedIn>
-              <UserButton />
-            </SignedIn>
-          </nav>
-        </div>
-      </header>
+    <div className="flex flex-col min-h-screen items-center justify-center">
       <main className="flex-1">
-        <section className="w-full py-12 md:py-24 lg:py-32 xl:py-48">
-          <div className="container px-4 md:px-6">
+        <section className="w-full py-12 md:py-24 lg:py-32">
+          <div className="container px-12 md:px-20 lg:px-24">
             <div className="grid gap-6 lg:grid-cols-[1fr_400px] lg:gap-12 xl:grid-cols-[1fr_600px]">
               <div className="flex flex-col justify-center space-y-4">
                 <div className="space-y-2">
@@ -54,9 +32,9 @@ export default function LandingPage() {
                   </Link>
                 </div>
               </div>
-              <div className="flex items-center justify-center">
+              <div className="flex items-center justify-end w-full">
                 <div className="relative h-[350px] w-[350px] sm:h-[400px] sm:w-[400px] lg:h-[500px] lg:w-[500px]">
-                  <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="absolute inset-0 flex items-center justify-end">
                     <div className="relative h-4/5 w-4/5 rounded-full bg-accent/10 p-4">
                       <div className="absolute inset-0 animate-pulse rounded-full bg-accent/5"></div>
                       <div className="absolute inset-4 animate-pulse rounded-full bg-accent/10 animation-delay-500"></div>
@@ -128,21 +106,7 @@ export default function LandingPage() {
           </div>
         </section>
       </main>
-      <footer className="border-t py-6 md:py-0">
-        <div className="container flex flex-col items-center justify-between gap-4 md:h-24 md:flex-row">
-          <p className="text-center text-sm leading-loose text-muted-foreground md:text-left">
-            © {new Date().getFullYear()} Voxploit. All rights reserved.
-          </p>
-          <div className="flex items-center gap-4">
-            <Link href="/terms" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
-              Terms
-            </Link>
-            <Link href="/privacy" className="text-sm text-muted-foreground underline-offset-4 hover:underline">
-              Privacy
-            </Link>
-          </div>
-        </div>
-      </footer>
+
     </div>
   )
 }
