@@ -6,11 +6,9 @@ import remarkBreaks from 'remark-breaks';
 import { generateUUID } from '@/lib/utils';
 
 export function Chat({
-    id,
     initialMessages,
     isReadonly,
 }: {
-    id: string;
     initialMessages: Array<{ id: string; role: string; content: string }>;
     isReadonly: boolean;
 }) {

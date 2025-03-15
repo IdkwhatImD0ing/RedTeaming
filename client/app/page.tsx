@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { MicIcon, ShieldAlert, Lock, Zap } from "lucide-react"
+import { SignedIn, SignedOut } from "@clerk/nextjs"
 
 export default function LandingPage() {
   return (
@@ -19,14 +20,24 @@ export default function LandingPage() {
                   </p>
                 </div>
                 <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                  <Link href="/sign-up">
-                    <Button className="px-8">
-                      Start Training
-                      <Zap className="ml-2 h-4 w-4" />
-                    </Button>
-                  </Link>
+                  <SignedOut>
+                    <Link href="/sign-up">
+                      <Button className="px-8 cursor-pointer">
+                        Start Training
+                        <Zap className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </SignedOut>
+                  <SignedIn>
+                    <Link href="/select">
+                      <Button className="px-8 cursor-pointer">
+                        Start Training
+                        <Zap className="ml-2 h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </SignedIn>
                   <Link href="/about">
-                    <Button variant="outline" className="px-8">
+                    <Button variant="outline" className="px-8 cursor-pointer">
                       Learn More
                     </Button>
                   </Link>

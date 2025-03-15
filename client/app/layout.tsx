@@ -24,9 +24,10 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${inter.variable} font-sans antialiased min-h-screen flex flex-col`}>
+        <body className={`${inter.variable} font-sans antialiased h-full overflow-hidden bg-background text-foreground`}>
           <Header />
-          {children}
+          {/* Main content with padding for spacing and adjusted height */}
+          <main className="py-4 h-[calc(100vh-11rem)] overflow-hidden">{children}</main>
           <Footer />
         </body>
       </html>
