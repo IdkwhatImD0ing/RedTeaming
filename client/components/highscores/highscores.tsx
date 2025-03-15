@@ -1,14 +1,12 @@
-"use client"
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { cn } from "@/lib/utils"
-import { Trophy, Medal, Award } from "lucide-react"
-import { useContext } from "react"
-import { LevelContext } from "@/components/sidebar/sidebar"
+'use client'
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { Trophy, Medal, Award } from "lucide-react";
+import { useLevel } from "@/lib/contexts/LevelContext";
 
 export function Highscores({ className }: { className?: string }) {
-    const { level } = useContext(LevelContext)
-    // Mock data for highscores
+    const { level } = useLevel();
+    // The level can be used to filter or adjust highscores if desired.
     const highscores = [
         { id: 1, username: "RedTeam_Master", score: 9850, date: "2023-05-15" },
         { id: 2, username: "PromptHacker", score: 9200, date: "2023-05-14" },
@@ -18,9 +16,7 @@ export function Highscores({ className }: { className?: string }) {
         { id: 6, username: "CyberSleuth", score: 7800, date: "2023-05-10" },
         { id: 7, username: "NeuralNinja", score: 7600, date: "2023-05-09" },
         { id: 8, username: "QuantumHacker", score: 7400, date: "2023-05-08" },
-    ]
-
-
+    ];
 
     return (
         <Card className={cn("h-full", className)}>
@@ -50,5 +46,5 @@ export function Highscores({ className }: { className?: string }) {
                 </div>
             </CardContent>
         </Card>
-    )
+    );
 }
