@@ -1,9 +1,9 @@
 import { createDataStreamResponse, smoothStream, streamText } from 'ai';
-import { systemPrompt } from '@/lib/ai/text_prompt';
+import { systemPrompt, userPrompt } from '@/lib/ai/text_prompt';
 import { openai } from '@ai-sdk/openai';
 
 export async function POST(request: Request) {
-    const { messages, level } = await request.json();
+    const { messages, level, newMessage } = await request.json();
 
 
     return createDataStreamResponse({
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
                 model: openai('gpt-4o-mini'),
                 system: systemPrompt(level),
                 temperature: 0.7,
-                messages,
+                messages: [...messages, { role: 'user', content: userPrompt(level, newMessage) }],
                 experimental_transform: smoothStream({ chunking: 'word' }),
                 onFinish: async ({ response }) => {
                     // Optionally handle the completed text generation here

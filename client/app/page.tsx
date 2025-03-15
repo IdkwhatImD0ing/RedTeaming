@@ -36,7 +36,7 @@ export default function LandingPage() {
                       </Button>
                     </Link>
                   </SignedIn>
-                  <Link href="/about">
+                  <Link href="/details">
                     <Button variant="outline" className="px-8 cursor-pointer">
                       Learn More
                     </Button>
