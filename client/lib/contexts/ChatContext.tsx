@@ -83,11 +83,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     // Helper function for processing streamed output
     const parseStreamOutput = (rawOutput: string): string => {
-        const tokenRegex = /(?:\d+):"([^"]+)"/g;
+        // Use a more robust regex that handles escaped quotes
+        const tokenRegex = /(?:\d+):"((?:\\"|[^"])+)"/g;
         let result = '';
         let match;
         while ((match = tokenRegex.exec(rawOutput)) !== null) {
-            result += match[1];
+            // Replace escaped quotes with actual quotes
+            result += match[1].replace(/\\"/g, '"');
         }
         return result;
     };
