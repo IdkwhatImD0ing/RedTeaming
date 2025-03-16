@@ -1,8 +1,9 @@
-import { createDataStreamResponse, smoothStream, streamText } from 'ai';
+import { createDataStreamResponse, smoothStream, streamText, DataStreamWriter } from 'ai';
 import { systemPrompt, userPrompt } from '@/lib/ai/text_prompt';
 import { openai } from '@ai-sdk/openai';
 import { currentUser } from '@clerk/nextjs/server';
 import { createClerkSupabaseClientSsr } from '@/lib/supabase/server';
+import { PostgrestError } from '@supabase/supabase-js';
 
 /**
  * Gets the secret number based on the specified security level
@@ -26,14 +27,16 @@ function getSecretNumber(level: string): string | undefined {
     }
 }
 
-
+interface HighscoreRow {
+    [key: string]: string | number | null;
+}
 
 export async function POST(request: Request) {
     const { messages, level, newMessage } = await request.json();
 
 
     return createDataStreamResponse({
-        execute: (dataStream: any) => {
+        execute: (dataStream: DataStreamWriter) => {
             const result = streamText({
                 model: openai('gpt-4o-mini'),
                 system: systemPrompt(level),
@@ -48,7 +51,8 @@ export async function POST(request: Request) {
 
                     if (secretNumber) {
                         // Get the response text
-                        const responseText = response.messages[response.messages.length - 1].content[0].text;
+                        const content = response.messages[response.messages.length - 1].content[0];
+                        const responseText = typeof content === 'string' ? content : 'text' in content ? content.text : '';
 
                         // Create regex to check if secret number appears surrounded by non-number characters or nothing
                         const regex = new RegExp(`(^|[^0-9])${secretNumber}([^0-9]|$)`, 'g');
@@ -73,7 +77,7 @@ export async function POST(request: Request) {
                             // Build the transcript using the complete conversation, including AI messages.
                             const transcript = [...messages,
                             { role: 'user', content: newMessage },
-                            { role: 'assistant', content: response.messages[response.messages.length - 1].content[0].text }
+                            { role: 'assistant', content: responseText }
                             ].map(msg => `${msg.role}: ${msg.content}`).join('\n');
 
                             const TABLE_NAME = 'highscores';
@@ -81,8 +85,7 @@ export async function POST(request: Request) {
                             // Try to select the current row for the user
                             const { data: currentData, error: selectError } = await client
                                 .from(TABLE_NAME)
-                                .select(`${level}_text`)
-                                .eq('user_id', user_id);
+                                .select(`${level}_text`) as { data: HighscoreRow[] | null, error: PostgrestError | null };
 
 
                             if (selectError || !currentData || currentData.length === 0) {

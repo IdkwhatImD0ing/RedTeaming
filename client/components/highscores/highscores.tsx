@@ -6,10 +6,23 @@ import { useLevel } from "@/lib/contexts/LevelContext";
 import { useEffect, useState } from "react";
 import { useSupabaseClient } from "@/lib/supabase/client";
 
+interface HighscoreRow {
+    user_id: string;
+    username: string;
+    [key: string]: string | number;
+}
+
 interface Highscore {
     user_id: string;
     username: string;
     score: number;
+}
+
+interface SupabaseError {
+    message: string;
+    details: string;
+    hint: string;
+    code: string;
 }
 
 export function Highscores({ className }: { className?: string }) {
@@ -17,38 +30,28 @@ export function Highscores({ className }: { className?: string }) {
     const [highscores, setHighscores] = useState<Highscore[]>([]);
     const client = useSupabaseClient();
 
-    // The level can be used to filter or adjust highscores if desired.
     useEffect(() => {
         const fetchHighscores = async () => {
             if (client) {
-                // Derive the column name, e.g., "level_one_text"
                 const scoreColumn = `${level}_text`;
 
-                // Query the "highscores" table, filtering out rows with null score,
-                // ordering by score ascending (lowest first) and limiting to top 10.
                 const { data, error } = await client
                     .from('highscores')
                     .select(`user_id, username, ${scoreColumn}`)
                     .not(scoreColumn, 'is', null)
                     .order(scoreColumn, { ascending: true })
-                    .limit(10);
+                    .limit(10) as { data: HighscoreRow[] | null, error: SupabaseError | null };
 
-                // Map the data to include a renamed 'score' property for easier rendering
                 if (!error && data) {
-                    const formattedData = data.map((item: any) => ({
-                        ...item,
-                        id: item.user_id, // Ensure we have an id for the key prop
+                    const formattedData = data.map((item: HighscoreRow) => ({
+                        user_id: item.user_id,
                         username: item.username,
-                        score: item[scoreColumn] // Rename the dynamic column to 'score'
+                        score: Number(item[scoreColumn])
                     }));
                     setHighscores(formattedData);
-                    return;
-                }
-
-                if (error) {
+                } else if (error) {
                     console.error('Error fetching highscores:', error);
-                } else {
-                    setHighscores(data);
+                    setHighscores([]);
                 }
             }
         };
@@ -66,7 +69,7 @@ export function Highscores({ className }: { className?: string }) {
             <CardContent className="p-0">
                 <div className="divide-y divide-border/40">
                     {highscores.map((score, index) => (
-                        <div key={score.id} className={cn("flex items-center gap-3 p-4", index < 3 && "bg-card/50")}>
+                        <div key={index} className={cn("flex items-center gap-3 p-4", index < 3 && "bg-card/50")}>
                             <div className="flex-shrink-0 w-8 text-center">
                                 {index === 0 && <Trophy className="h-5 w-5 text-secondary mx-auto" />}
                                 {index === 1 && <Medal className="h-5 w-5 text-accent mx-auto" />}
