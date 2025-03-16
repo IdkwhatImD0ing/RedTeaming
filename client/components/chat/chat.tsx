@@ -2,14 +2,14 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
 import { useChat } from "@/lib/contexts/ChatContext";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Send } from "lucide-react";
+import { Send, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { MessageBubble } from "./messageBubble";
 
 export function Chat({ className }: { className?: string }) {
-    const { messages, sendMessage } = useChat();
+    const { messages, sendMessage, resetMessages } = useChat();
     const [input, setInput] = useState("");
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -25,6 +25,10 @@ export function Chat({ className }: { className?: string }) {
         await sendMessage(input);
         setInput("");
         setLoading(false);
+    };
+
+    const handleReset = () => {
+        resetMessages();
     };
 
     return (
@@ -47,19 +51,41 @@ export function Chat({ className }: { className?: string }) {
             <CardFooter className="border-t border-border/40 p-4">
                 <form onSubmit={handleSubmit} className="flex w-full gap-2">
                     <div className="relative flex-1">
-                        <Input
-                            type="text"
+                        <Textarea
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             placeholder="Type your message..."
-                            className="pr-10"
+                            className="pr-24 min-h-[80px] resize-none"
                             disabled={loading}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    if (input.trim()) {
+                                        handleSubmit(e as unknown as FormEvent<HTMLFormElement>);
+                                    }
+                                }
+                            }}
                         />
+                        <div className="absolute bottom-2 right-2 flex gap-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={handleReset}
+                                className="h-8 px-2"
+                            >
+                                <RefreshCw className="h-4 w-4" />
+                            </Button>
+                            <Button
+                                type="submit"
+                                size="sm"
+                                disabled={loading || !input.trim()}
+                                className="h-8 px-3"
+                            >
+                                <Send className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
-                    <Button type="submit" disabled={loading || !input.trim()} className="rounded-full">
-                        <Send className="h-4 w-4 mr-2" />
-                        Send
-                    </Button>
                 </form>
             </CardFooter>
         </Card>

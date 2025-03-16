@@ -8,11 +8,13 @@ export type Message = { id: string; role: string; content: string };
 type ChatContextType = {
     messages: Message[];
     sendMessage: (input: string) => Promise<void>;
+    resetMessages: () => void;
 };
 
 const ChatContext = createContext<ChatContextType>({
     messages: [],
     sendMessage: async () => { },
+    resetMessages: () => { },
 });
 const initialMessage: Message = {
     id: "1",
@@ -81,6 +83,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         }
     };
 
+    const resetMessages = () => {
+        setMessages([initialMessage]);
+    };
+
     // Helper function for processing streamed output
     const parseStreamOutput = (rawOutput: string): string => {
         // Use a more robust regex that handles escaped quotes
@@ -95,7 +101,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     };
 
     return (
-        <ChatContext.Provider value={{ messages, sendMessage }}>
+        <ChatContext.Provider value={{ messages, sendMessage, resetMessages }}>
             {children}
         </ChatContext.Provider>
     );
