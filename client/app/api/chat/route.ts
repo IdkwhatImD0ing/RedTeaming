@@ -32,7 +32,8 @@ interface HighscoreRow {
 }
 
 export async function POST(request: Request) {
-    const { messages, level, newMessage } = await request.json();
+    const { messages, level, newMessage, conversationId } = await request.json();
+    console.log(conversationId)
 
 
     return createDataStreamResponse({
@@ -46,23 +47,40 @@ export async function POST(request: Request) {
                 messages: [...messages, { role: 'user', content: userPrompt(level, newMessage) }],
                 experimental_transform: smoothStream({ chunking: 'word' }),
                 onFinish: async ({ response }) => {
+                    const client = await createClerkSupabaseClientSsr()
+                    const content = response.messages[response.messages.length - 1].content[0];
+                    // Get the response text
+                    const responseText = typeof content === 'string' ? content : 'text' in content ? content.text : '';
+                    const transcript = [...messages,
+                    { role: 'user', content: newMessage },
+                    { role: 'assistant', content: responseText }
+                    ].map(msg => `${msg.role}: ${msg.content}`).join('\n');
+                    const user = await currentUser()
+                    const user_id = user?.id
+                    const username = user?.username
+
+
+
                     // Optionally handle the completed text generation here
                     const secretNumber = getSecretNumber(level);
 
-                    if (secretNumber) {
-                        // Get the response text
-                        const content = response.messages[response.messages.length - 1].content[0];
-                        const responseText = typeof content === 'string' ? content : 'text' in content ? content.text : '';
+                    await client.from('conversations').upsert({
+                        user_id: user_id,
+                        username: username,
+                        id: conversationId,
+                        transcript: transcript,
+                        level: level,
+                    });
 
+
+
+                    if (secretNumber) {
                         // Create regex to check if secret number appears surrounded by non-number characters or nothing
                         const regex = new RegExp(`(^|[^0-9])${secretNumber}([^0-9]|$)`, 'g');
 
                         // Check if the response contains the secret number
                         if (regex.test(responseText)) {
-                            const user = await currentUser()
-                            const user_id = user?.id
-                            const username = user?.username
-                            const client = await createClerkSupabaseClientSsr()
+
                             // console.log(user_id, username)
                             // console.log(client)
 
@@ -75,10 +93,7 @@ export async function POST(request: Request) {
                                 .reduce((acc: number, msg: { content: string }) => acc + msg.content.length, 0);
 
                             // Build the transcript using the complete conversation, including AI messages.
-                            const transcript = [...messages,
-                            { role: 'user', content: newMessage },
-                            { role: 'assistant', content: responseText }
-                            ].map(msg => `${msg.role}: ${msg.content}`).join('\n');
+
 
                             const TABLE_NAME = process.env.NEXT_PUBLIC_TABLE_NAME as string;
 

@@ -25,6 +25,7 @@ const initialMessage: Message = {
 export function ChatProvider({ children }: { children: React.ReactNode }) {
     const { level } = useLevel();
     const [messages, setMessages] = useState<Message[]>([initialMessage]);
+    const [conversationId, setConversationId] = useState<string | null>(generateUUID());
 
     // Reset messages when level changes
     useEffect(() => {
@@ -53,6 +54,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
                     messages: [...messages],
                     newMessage: input,
                     level: level,
+                    conversationId: conversationId,
                 }),
             });
 
@@ -85,6 +87,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
     const resetMessages = () => {
         setMessages([initialMessage]);
+        setConversationId(generateUUID());
     };
 
     // Helper function for processing streamed output
