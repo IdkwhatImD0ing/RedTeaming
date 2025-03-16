@@ -38,6 +38,9 @@ export async function POST(request: Request) {
 
     return createDataStreamResponse({
         execute: (dataStream: DataStreamWriter) => {
+            console.log("Starting text generation")
+            console.log(systemPrompt(level))
+            console.log(userPrompt(level, newMessage))
             const result = streamText({
                 model: openai('gpt-4o-mini'),
                 system: systemPrompt(level),

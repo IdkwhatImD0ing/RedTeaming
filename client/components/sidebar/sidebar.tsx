@@ -78,6 +78,7 @@ export function Sidebar({ className }: { className?: string }) {
 
     // Check if a level is unlocked by verifying if the previous level was passed
     const isLevelUnlocked = (lvlId: string) => {
+        return true;
         if (!userData) {
             // Before user data loads, only Level 1 is available
             return lvlId === "level_one";
