@@ -2,7 +2,6 @@
 
 import * as Clerk from "@clerk/elements/common"
 import * as SignUp from "@clerk/elements/sign-up"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,7 +13,6 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import { MicIcon } from "lucide-react"
 
 export default function SignUpPage() {
     return (
