@@ -17,9 +17,9 @@ export default function Header() {
         </Link>
         <nav className="flex items-center gap-4">
           <SignedOut>
-            <Link href="/sign-in">
+            {/* <Link href="/sign-in">
               <Button variant="ghost">Sign In</Button>
-            </Link>
+            </Link> */}
             <Link href="/sign-up">
               <Button variant="default">Get Started</Button>
             </Link>
