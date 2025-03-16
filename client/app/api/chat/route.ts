@@ -80,7 +80,7 @@ export async function POST(request: Request) {
                             { role: 'assistant', content: responseText }
                             ].map(msg => `${msg.role}: ${msg.content}`).join('\n');
 
-                            const TABLE_NAME = 'highscores';
+                            const TABLE_NAME = process.env.NEXT_PUBLIC_TABLE_NAME as string;
 
                             // Try to select the current row for the user
                             const { data: currentData, error: selectError } = await client

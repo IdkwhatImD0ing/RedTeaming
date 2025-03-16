@@ -36,7 +36,7 @@ export function Highscores({ className }: { className?: string }) {
                 const scoreColumn = `${level}_text`;
 
                 const { data, error } = await client
-                    .from('highscores')
+                    .from(process.env.NEXT_PUBLIC_TABLE_NAME as string)
                     .select(`user_id, username, ${scoreColumn}`)
                     .not(scoreColumn, 'is', null)
                     .order(scoreColumn, { ascending: true })
