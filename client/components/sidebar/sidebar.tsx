@@ -54,6 +54,10 @@ export function Sidebar({ className }: { className?: string }) {
 
                 if (!error && data && data.length > 0) {
                     setUserData(data[0]);
+
+                    // Set the level to the highest unlocked level
+                    const highestLevel = getHighestUnlockedLevel(data[0]);
+                    setLevel(highestLevel);
                 } else if (error) {
                     console.error('Error fetching user data:', error);
                     setUserData(null);
@@ -61,7 +65,16 @@ export function Sidebar({ className }: { className?: string }) {
             }
         };
         fetchUserData();
-    }, [user, client]);
+    }, [user, client, setLevel]);
+
+    // Get the highest level the user has unlocked
+    const getHighestUnlockedLevel = (userData: UserData): string => {
+        if (userData.level_four_text !== null) return "level_five";
+        if (userData.level_three_text !== null) return "level_four";
+        if (userData.level_two_text !== null) return "level_three";
+        if (userData.level_one_text !== null) return "level_two";
+        return "level_one";
+    };
 
     // Check if a level is unlocked by verifying if the previous level was passed
     const isLevelUnlocked = (lvlId: string) => {
