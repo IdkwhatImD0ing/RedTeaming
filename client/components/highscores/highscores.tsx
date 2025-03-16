@@ -3,20 +3,57 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { Trophy, Medal, Award } from "lucide-react";
 import { useLevel } from "@/lib/contexts/LevelContext";
+import { useEffect, useState } from "react";
+import { useSupabaseClient } from "@/lib/supabase/client";
+
+interface Highscore {
+    user_id: string;
+    username: string;
+    score: number;
+}
 
 export function Highscores({ className }: { className?: string }) {
     const { level } = useLevel();
+    const [highscores, setHighscores] = useState<Highscore[]>([]);
+    const client = useSupabaseClient();
+
     // The level can be used to filter or adjust highscores if desired.
-    const highscores = [
-        { id: 1, username: "RedTeam_Master", score: 9850, date: "2023-05-15" },
-        { id: 2, username: "PromptHacker", score: 9200, date: "2023-05-14" },
-        { id: 3, username: "AIWhisperer", score: 8750, date: "2023-05-13" },
-        { id: 4, username: "SecOpsElite", score: 8500, date: "2023-05-12" },
-        { id: 5, username: "VoiceBreaker", score: 8100, date: "2023-05-11" },
-        { id: 6, username: "CyberSleuth", score: 7800, date: "2023-05-10" },
-        { id: 7, username: "NeuralNinja", score: 7600, date: "2023-05-09" },
-        { id: 8, username: "QuantumHacker", score: 7400, date: "2023-05-08" },
-    ];
+    useEffect(() => {
+        const fetchHighscores = async () => {
+            if (client) {
+                // Derive the column name, e.g., "level_one_text"
+                const scoreColumn = `${level}_text`;
+
+                // Query the "highscores" table, filtering out rows with null score,
+                // ordering by score ascending (lowest first) and limiting to top 10.
+                const { data, error } = await client
+                    .from('highscores')
+                    .select(`user_id, username, ${scoreColumn}`)
+                    .not(scoreColumn, 'is', null)
+                    .order(scoreColumn, { ascending: true })
+                    .limit(10);
+
+                // Map the data to include a renamed 'score' property for easier rendering
+                if (!error && data) {
+                    const formattedData = data.map((item: any) => ({
+                        ...item,
+                        id: item.user_id, // Ensure we have an id for the key prop
+                        username: item.username,
+                        score: item[scoreColumn] // Rename the dynamic column to 'score'
+                    }));
+                    setHighscores(formattedData);
+                    return;
+                }
+
+                if (error) {
+                    console.error('Error fetching highscores:', error);
+                } else {
+                    setHighscores(data);
+                }
+            }
+        };
+        fetchHighscores();
+    }, [level, client]);
 
     return (
         <Card className={cn("h-full", className)}>
@@ -38,7 +75,6 @@ export function Highscores({ className }: { className?: string }) {
                             </div>
                             <div className="flex-1 min-w-0">
                                 <p className="font-medium truncate">{score.username}</p>
-                                <p className="text-xs opacity-80">{score.date}</p>
                             </div>
                             <div className="flex-shrink-0 font-mono font-medium">{score.score.toLocaleString()}</div>
                         </div>
