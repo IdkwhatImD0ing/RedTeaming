@@ -60,7 +60,7 @@ export function Highscores({ className }: { className?: string }) {
 
     return (
         <Card className={cn("h-full", className)}>
-            <CardHeader className="border-b border-border/40">
+            <CardHeader className="border-b border-border/40 pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
                     <Trophy className="h-5 w-5 text-secondary" />
                     Leaderboard

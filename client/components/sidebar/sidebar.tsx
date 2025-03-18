@@ -7,6 +7,7 @@ import { useLevel } from "@/lib/contexts/LevelContext";
 import { useSupabaseClient } from "@/lib/supabase/client";
 import { useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
+import { HelpButton } from "../help-button";
 
 interface UserData {
     user_id: string;
@@ -54,10 +55,6 @@ export function Sidebar({ className }: { className?: string }) {
 
                 if (!error && data && data.length > 0) {
                     setUserData(data[0]);
-
-                    // Set the level to the highest unlocked level
-                    const highestLevel = getHighestUnlockedLevel(data[0]);
-                    setLevel(highestLevel);
                 } else if (error) {
                     console.error('Error fetching user data:', error);
                     setUserData(null);
@@ -65,16 +62,14 @@ export function Sidebar({ className }: { className?: string }) {
             }
         };
         fetchUserData();
-    }, [user, client, setLevel]);
+        setLevel(localStorage.getItem('currentLevel') || "level_one");
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [user]);
 
-    // Get the highest level the user has unlocked
-    const getHighestUnlockedLevel = (userData: UserData): string => {
-        if (userData.level_four_text !== null) return "level_five";
-        if (userData.level_three_text !== null) return "level_four";
-        if (userData.level_two_text !== null) return "level_three";
-        if (userData.level_one_text !== null) return "level_two";
-        return "level_one";
-    };
+    useEffect(() => {
+        localStorage.setItem('currentLevel', level);
+    }, [level]);
+
 
     // Check if a level is unlocked by verifying if the previous level was passed
     const isLevelUnlocked = (lvlId: string) => {
@@ -100,10 +95,11 @@ export function Sidebar({ className }: { className?: string }) {
 
     return (
         <Card className={cn("h-full", className)}>
-            <CardHeader className="border-b border-border/40">
-                <CardTitle className="text-lg flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-primary" />
-                    Challenge Levels
+            <CardHeader className="border-b border-border/40 pb-4">
+                <CardTitle className="text-lg flex items-center">
+                    <Shield className="h-5 w-5 text-primary mr-2" />
+                    <span className="flex-1">Challenge Levels</span>
+                    <HelpButton />
                 </CardTitle>
             </CardHeader>
             <CardContent className="p-4 space-y-2">

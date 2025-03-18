@@ -152,3 +152,8 @@
     animation-delay: 1000ms;
   }
 }
+
+html,
+body {
+  height: 100%;
+}
