@@ -4,33 +4,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Shield, ShieldAlert, ShieldX, Zap, Trophy } from "lucide-react";
 import { useLevel } from "@/lib/contexts/LevelContext";
-import { useSupabaseClient, useRealtimeUpdates } from "@/lib/supabase/client";
+import { useRealtimeUpdates } from "@/lib/supabase/client";
 import { useEffect, useState, useCallback } from "react";
-import { useUser } from "@clerk/nextjs";
 import { HelpButton } from "../help-button";
 import { AchievementDialog } from "../achievement-dialog";
-
-interface UserData {
-    user_id: string;
-    username: string;
-    level_one_text: number | null;
-    level_two_text: number | null;
-    level_three_text: number | null;
-    level_four_text: number | null;
-    level_five_text: number | null;
-    level_one_voice: number | null;
-    level_two_voice: number | null;
-    level_three_voice: number | null;
-    level_four_voice: number | null;
-    level_five_voice: number | null;
-}
-
-interface SupabaseError {
-    message: string;
-    details: string;
-    hint: string;
-    code: string;
-}
+import { useUserData } from "@/lib/hooks/useUserData";
 
 const levels = [
     { id: "level_one", name: "Level 1", icon: Shield, description: "Your grandma could do this" },
@@ -42,34 +20,15 @@ const levels = [
 
 export function Sidebar({ className }: { className?: string }) {
     const { level, setLevel } = useLevel();
-    const { user } = useUser();
-    const [userData, setUserData] = useState<UserData | null>(null);
-    const client = useSupabaseClient();
+    const { userData, refetch } = useUserData();
     const [achievementDialogOpen, setAchievementDialogOpen] = useState(false);
     const [achievementType, setAchievementType] = useState<"complete" | "new_high_score">("complete");
     const [achievementLevel, setAchievementLevel] = useState<string>("");
 
-    const fetchUserData = async () => {
-        if (client && user) {
-            const { data, error } = await client
-                .from(process.env.NEXT_PUBLIC_TABLE_NAME as string)
-                .select('*')
-                .eq('user_id', user.id) as { data: UserData[] | null, error: SupabaseError | null };
-
-            if (!error && data && data.length > 0) {
-                setUserData(data[0]);
-            } else if (error) {
-                console.error('Error fetching user data:', error);
-                setUserData(null);
-            }
-        }
-    };
-
     useEffect(() => {
-        fetchUserData();
         setLevel(localStorage.getItem('currentLevel') || "level_one");
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user]);
+    }, []);
 
     useEffect(() => {
         localStorage.setItem('currentLevel', level);
@@ -82,7 +41,6 @@ export function Sidebar({ className }: { className?: string }) {
     }, [])
 
     useRealtimeUpdates(handleRealtimeUpdate);
-
 
     // Check if a level is unlocked by verifying if the previous level was passed
     const isLevelUnlocked = (lvlId: string) => {
@@ -112,7 +70,7 @@ export function Sidebar({ className }: { className?: string }) {
                 open={achievementDialogOpen}
                 onOpenChange={(open) => {
                     setAchievementDialogOpen(open);
-                    fetchUserData();
+                    refetch();
                 }}
                 level={achievementLevel}
                 type={achievementType}
