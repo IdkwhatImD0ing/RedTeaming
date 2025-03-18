@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useSupabaseClient } from '@/lib/supabase/client';
 import { useUser } from '@clerk/nextjs';
+import { QueryError } from '@supabase/supabase-js';
 
 interface UserData {
     user_id: string;
@@ -35,7 +36,7 @@ export function useUserData() {
                 const { data, error } = await client
                     .from(process.env.NEXT_PUBLIC_TABLE_NAME as string)
                     .select('*')
-                    .eq('user_id', user.id) as { data: UserData[] | null, error: any };
+                    .eq('user_id', user.id) as { data: UserData[] | null, error: QueryError | null };
 
                 if (error) throw error;
 
@@ -68,7 +69,7 @@ export function useUserData() {
             const { data, error } = await client
                 .from(process.env.NEXT_PUBLIC_TABLE_NAME as string)
                 .select('*')
-                .eq('user_id', user.id) as { data: UserData[] | null, error: any };
+                .eq('user_id', user.id) as { data: UserData[] | null, error: QueryError | null };
 
             if (error) throw error;
 
