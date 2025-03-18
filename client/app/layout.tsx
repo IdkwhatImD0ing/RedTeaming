@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import Header from "@/components/Header"
 import Footer from "@/components/Footer"
+import { Analytics } from "@vercel/analytics/react"
 import { createMetadata } from './metadata'
 
 const inter = Inter({
@@ -31,7 +32,10 @@ export default function RootLayout({
           className={`${inter.variable} font-sans antialiased h-full min-h-screen bg-background text-foreground flex flex-col`}
         >
           <Header />
-          <main className="flex-1 py-4 h-full overflow-auto">{children}</main>
+          <main className="flex-1 py-4 h-full overflow-auto">
+            {children}
+            <Analytics />
+          </main>
           <Footer />
         </body>
       </html>
