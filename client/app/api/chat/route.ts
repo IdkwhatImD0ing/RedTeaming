@@ -33,14 +33,18 @@ interface HighscoreRow {
 
 export async function POST(request: Request) {
     const { messages, level, newMessage, conversationId } = await request.json();
-    console.log(conversationId)
-
+    console.log('Received request with conversationId:', conversationId);
+    console.log('Level:', level);
+    console.log('Environment variables loaded:', {
+        TABLE_NAME: process.env.NEXT_PUBLIC_TABLE_NAME,
+        SECRET_NUMBER: getSecretNumber(level),
+    });
 
     return createDataStreamResponse({
         execute: (dataStream: DataStreamWriter) => {
-            console.log("Starting text generation")
-            console.log(systemPrompt(level))
-            console.log(userPrompt(level, newMessage))
+            console.log("Starting text generation");
+            console.log("System prompt:", systemPrompt(level));
+            console.log("User prompt:", userPrompt(level, newMessage));
             const result = streamText({
                 model: openai('gpt-4o-mini'),
                 system: systemPrompt(level),
@@ -50,43 +54,57 @@ export async function POST(request: Request) {
                 messages: [...messages, { role: 'user', content: userPrompt(level, newMessage) }],
                 experimental_transform: smoothStream({ chunking: 'word' }),
                 onFinish: async ({ response }) => {
-                    const client = await createClerkSupabaseClientSsr()
+                    console.log("Text generation finished");
+                    const client = await createClerkSupabaseClientSsr();
+                    console.log("Supabase client created");
+
                     const content = response.messages[response.messages.length - 1].content[0];
                     // Get the response text
                     const responseText = typeof content === 'string' ? content : 'text' in content ? content.text : '';
+                    console.log("Response text length:", responseText.length);
+
                     const transcript = [...messages,
                     { role: 'user', content: newMessage },
                     { role: 'assistant', content: responseText }
                     ].map(msg => `${msg.role}: ${msg.content}`).join('\n');
-                    const user = await currentUser()
-                    const user_id = user?.id
-                    const username = user?.username
 
-
+                    const user = await currentUser();
+                    const user_id = user?.id;
+                    const username = user?.username;
+                    console.log("Current user:", { user_id, username });
 
                     // Optionally handle the completed text generation here
                     const secretNumber = getSecretNumber(level);
+                    console.log("Secret number for level:", secretNumber);
 
-                    await client.from('conversations').upsert({
-                        user_id: user_id,
-                        username: username,
-                        id: conversationId,
-                        transcript: transcript,
-                        level: level,
-                    });
+                    try {
+                        const { error: conversationError } = await client.from('conversations').upsert({
+                            user_id: user_id,
+                            username: username,
+                            id: conversationId,
+                            transcript: transcript,
+                            level: level,
+                        });
 
-
+                        if (conversationError) {
+                            console.error("Error saving conversation:", conversationError);
+                        } else {
+                            console.log("Conversation saved successfully:", conversationId);
+                        }
+                    } catch (error) {
+                        console.error("Exception saving conversation:", error);
+                    }
 
                     if (secretNumber) {
                         // Create regex to check if secret number appears surrounded by non-number characters or nothing
                         const regex = new RegExp(`(^|[^0-9])${secretNumber}([^0-9]|$)`, 'g');
 
                         // Check if the response contains the secret number
-                        if (regex.test(responseText)) {
+                        const secretFound = regex.test(responseText);
+                        console.log("Secret number found in response:", secretFound);
 
-                            // console.log(user_id, username)
-                            // console.log(client)
-
+                        if (secretFound) {
+                            console.log("Secret number found! Processing high score...");
 
                             // Calculate the current text score as the total number of characters in all user messages.
                             // We only sum characters from messages with role 'user'.
@@ -95,49 +113,79 @@ export async function POST(request: Request) {
                                 .filter((msg: { role: string; content: string }) => msg.role === 'user')
                                 .reduce((acc: number, msg: { content: string }) => acc + msg.content.length, 0);
 
-                            // Build the transcript using the complete conversation, including AI messages.
-
+                            console.log("Calculated score:", currentScore);
 
                             const TABLE_NAME = process.env.NEXT_PUBLIC_TABLE_NAME as string;
+                            console.log("Using table name:", TABLE_NAME);
 
-                            // Try to select the current row for the user
-                            const { data: currentData, error: selectError } = await client
-                                .from(TABLE_NAME)
-                                .select(`${level}_text`) as { data: HighscoreRow[] | null, error: PostgrestError | null };
-
-
-                            if (selectError || !currentData || currentData.length === 0) {
-                                // No row exists for this user; create a new row
-                                const { error: insertError } = await client
+                            try {
+                                // Try to select the current row for the user
+                                console.log("Querying existing high score...");
+                                const { data: currentData, error: selectError } = await client
                                     .from(TABLE_NAME)
-                                    .insert({
+                                    .select(`${level}_text`)
+                                    .eq('user_id', user_id) as { data: HighscoreRow[] | null, error: PostgrestError | null };
+
+                                console.log("Query result:", { data: currentData, error: selectError });
+
+                                if (selectError) {
+                                    console.error("Error selecting high score:", selectError);
+                                }
+
+                                if (selectError || !currentData || currentData.length === 0) {
+                                    // No row exists for this user; create a new row
+                                    console.log("No existing high score found, inserting new row");
+                                    const insertData = {
                                         user_id: user_id,
                                         username: username,
                                         [`${level}_text`]: currentScore,
                                         [`${level}_text_transcript`]: transcript,
-                                    });
-                                if (insertError) {
-                                    console.error('Error inserting new row:', insertError);
-                                } else {
-                                    console.log(`New row inserted for user ${user_id} with ${level} high score: ${currentScore}`);
-                                }
-                            } else {
-                                // Row exists; check if we need to update based on the current score
-                                const existingScore = currentData[0][`${level}_text`];
-                                if (existingScore === null || currentScore < existingScore) {
-                                    const { error: updateError } = await client
+                                    };
+                                    console.log("Insert data:", insertData);
+
+                                    const { data: insertData2, error: insertError } = await client
                                         .from(TABLE_NAME)
-                                        .update({
+                                        .insert(insertData)
+                                        .select();
+
+                                    if (insertError) {
+                                        console.error('Error inserting new row:', insertError);
+                                    } else {
+                                        console.log(`New row inserted for user ${user_id} with ${level} high score: ${currentScore}`);
+                                        console.log('Insert response:', insertData2);
+                                    }
+                                } else {
+                                    // Row exists; check if we need to update based on the current score
+                                    const existingScore = currentData[0][`${level}_text`];
+                                    console.log("Existing score:", existingScore);
+                                    console.log("Current score:", currentScore);
+
+                                    if (existingScore === null || currentScore < existingScore) {
+                                        console.log("Updating high score");
+                                        const updateData = {
                                             [`${level}_text`]: currentScore,
                                             [`${level}_text_transcript`]: transcript,
-                                        })
-                                        .eq('user_id', user_id);
-                                    if (updateError) {
-                                        console.error('Error updating high score:', updateError);
+                                        };
+                                        console.log("Update data:", updateData);
+
+                                        const { data: updateData2, error: updateError } = await client
+                                            .from(TABLE_NAME)
+                                            .update(updateData)
+                                            .eq('user_id', user_id)
+                                            .select();
+
+                                        if (updateError) {
+                                            console.error('Error updating high score:', updateError);
+                                        } else {
+                                            console.log(`High score updated for ${level} to ${currentScore}`);
+                                            console.log('Update response:', updateData2);
+                                        }
                                     } else {
-                                        console.log(`High score updated for ${level} to ${currentScore}`);
+                                        console.log(`No update needed. Current score (${currentScore}) is not better than existing (${existingScore})`);
                                     }
                                 }
+                            } catch (error) {
+                                console.error("Exception processing high score:", error);
                             }
                         }
                     }
