@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Shield, ShieldAlert, ShieldX, Zap, Trophy } from "lucide-react";
 import { useLevel } from "@/lib/contexts/LevelContext";
-import { useSupabaseClient } from "@/lib/supabase/client";
-import { useEffect, useState } from "react";
+import { useSupabaseClient, useRealtimeUpdates } from "@/lib/supabase/client";
+import { useEffect, useState, useCallback } from "react";
 import { useUser } from "@clerk/nextjs";
 import { HelpButton } from "../help-button";
+import { AchievementDialog } from "../achievement-dialog";
 
 interface UserData {
     user_id: string;
@@ -44,23 +45,27 @@ export function Sidebar({ className }: { className?: string }) {
     const { user } = useUser();
     const [userData, setUserData] = useState<UserData | null>(null);
     const client = useSupabaseClient();
+    const [achievementDialogOpen, setAchievementDialogOpen] = useState(false);
+    const [achievementType, setAchievementType] = useState<"complete" | "new_high_score">("complete");
+    const [achievementLevel, setAchievementLevel] = useState<string>("");
+
+    const fetchUserData = async () => {
+        if (client && user) {
+            const { data, error } = await client
+                .from(process.env.NEXT_PUBLIC_TABLE_NAME as string)
+                .select('*')
+                .eq('user_id', user.id) as { data: UserData[] | null, error: SupabaseError | null };
+
+            if (!error && data && data.length > 0) {
+                setUserData(data[0]);
+            } else if (error) {
+                console.error('Error fetching user data:', error);
+                setUserData(null);
+            }
+        }
+    };
 
     useEffect(() => {
-        const fetchUserData = async () => {
-            if (client && user) {
-                const { data, error } = await client
-                    .from(process.env.NEXT_PUBLIC_TABLE_NAME as string)
-                    .select('*')
-                    .eq('user_id', user.id) as { data: UserData[] | null, error: SupabaseError | null };
-
-                if (!error && data && data.length > 0) {
-                    setUserData(data[0]);
-                } else if (error) {
-                    console.error('Error fetching user data:', error);
-                    setUserData(null);
-                }
-            }
-        };
         fetchUserData();
         setLevel(localStorage.getItem('currentLevel') || "level_one");
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -69,6 +74,14 @@ export function Sidebar({ className }: { className?: string }) {
     useEffect(() => {
         localStorage.setItem('currentLevel', level);
     }, [level]);
+
+    const handleRealtimeUpdate = useCallback((data: { level: string; type: 'complete' | 'new_high_score' }) => {
+        setAchievementDialogOpen(true);
+        setAchievementType(data.type);
+        setAchievementLevel(data.level);
+    }, [])
+
+    useRealtimeUpdates(handleRealtimeUpdate);
 
 
     // Check if a level is unlocked by verifying if the previous level was passed
@@ -95,6 +108,15 @@ export function Sidebar({ className }: { className?: string }) {
 
     return (
         <Card className={cn("h-full", className)}>
+            <AchievementDialog
+                open={achievementDialogOpen}
+                onOpenChange={(open) => {
+                    setAchievementDialogOpen(open);
+                    fetchUserData();
+                }}
+                level={achievementLevel}
+                type={achievementType}
+            />
             <CardHeader className="border-b border-border/40 pb-4">
                 <CardTitle className="text-lg flex items-center">
                     <Shield className="h-5 w-5 text-primary mr-2" />

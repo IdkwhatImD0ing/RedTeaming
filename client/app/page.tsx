@@ -107,11 +107,20 @@ export default function LandingPage() {
                 </p>
               </div>
               <div className="flex flex-col gap-2 min-[400px]:flex-row">
-                <Link href="/sign-up">
-                  <Button size="lg" className="px-8">
-                    Create Account
-                  </Button>
-                </Link>
+                <SignedOut>
+                  <Link href="/sign-up">
+                    <Button size="lg" className="px-8">
+                      Create Account
+                    </Button>
+                  </Link>
+                </SignedOut>
+                <SignedIn>
+                  <Link href="/select">
+                    <Button size="lg" className="px-8">
+                      Start Training
+                    </Button>
+                  </Link>
+                </SignedIn>
               </div>
             </div>
           </div>
